@@ -96,8 +96,10 @@ def aes_encrypt_block(key: bytes, block: bytes) -> bytes:
     """Cifra un bloque de 16 bytes con AES-256."""
     rks = _key_expansion(key)
     s = list(block)
-    # Reorganizar en orden columna-mayor
-    s = [s[r + 4*c] for c in range(4) for r in range(4)]
+    # El estado interno de AES usa orden columna-mayor, que coincide con
+    # la lectura de bytes en orden: byte i → columna i//4, fila i%4.
+    # ShiftRows opera sobre filas del estado, lo que en este layout
+    # desplaza los índices correctamente sin reordenar la entrada ni la salida.
     s = _add_round_key(s, rks[0])
     for rnd in range(1, 15):
         s = _sub_bytes(s)
@@ -105,9 +107,7 @@ def aes_encrypt_block(key: bytes, block: bytes) -> bytes:
         if rnd < 14:
             s = _mix_columns(s)
         s = _add_round_key(s, rks[rnd])
-    # Volver a orden fila-mayor
-    out = [s[c*4 + r] for r in range(4) for c in range(4)]
-    return bytes(out)
+    return bytes(s)
 
 
 # ─────────────────────────────────────────────────────────────────────────────

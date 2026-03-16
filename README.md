@@ -83,17 +83,21 @@ pytest tests/
 ## Estructura del proyecto
 
 ```
-ml-kem/
-├── mlkem/
+ML-KEM/
+├── mlkem_pkg/
 │   ├── __init__.py
-│   ├── mlkem.py          # Clase principal ML-KEM
-│   ├── ntt.py            # Transformada de número teórico (NTT)
-│   ├── sampling.py       # Funciones de muestreo
-│   └── utils.py          # Funciones auxiliares (XOF, PRF, KDF)
-├── tests/
-│   └── test_mlkem.py     # Tests unitarios
-├── README.md
-└── main.py               # Script de demostración
+│   ├── aes_gcm.py        # Cifrado simétrico AES-GCM
+│   ├── codec.py          # Codificación y decodificación
+│   ├── constants.py      # Parámetros de cada nivel de seguridad
+│   ├── hash_utils.py     # Funciones hash (XOF, PRF, KDF)
+│   ├── kem.py            # Lógica principal: KeyGen, Encaps, Decaps
+│   ├── poly.py           # Operaciones con polinomios
+│   └── sampling.py       # Funciones de muestreo
+├── .gitignore
+├── demo.py               # Demostración básica
+├── demo2.py              # Demostración extendida
+├── ML-KEM.py             # Script de entrada principal
+└── README.md
 ```
 
 ---
