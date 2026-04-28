@@ -33,14 +33,13 @@ class TestAESBlock:
 
     def test_nist_known_answer(self):
         """
-        Vector NIST AES-256:
-        key  = 000102...1f
-        pt   = 00112233...ff (primeros 16 bytes)
-        ct   = 8ea2b7ca516745bfeafc49904b496089  (conocido)
+        Vector NIST AES-256 (AESAVS):
+        key  = 000102030405060708090a0b0c0d0e0f101112131415161718191a1b1c1d1e1f
+        pt   = 00112233445566778899aabbccddeeff
+        ct   = 8ea2b7ca516745bfeafc49904b496089
         """
         key = bytes(range(32))
-        pt = bytes(range(16))
-        # Valor de referencia del NIST AESAVS
+        pt = bytes.fromhex("00112233445566778899aabbccddeeff")
         expected = bytes.fromhex("8ea2b7ca516745bfeafc49904b496089")
         assert aes_encrypt_block(key, pt) == expected
 
