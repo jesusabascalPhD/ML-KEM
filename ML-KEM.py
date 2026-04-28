@@ -72,11 +72,9 @@ def _PRF(eta: int, s: bytes, b: int) -> bytes:
     """PRF_eta(s, b) = SHAKE-256(s || b)  → 64*eta bytes"""
     return hashlib.shake_256(s + bytes([b])).digest(64 * eta)
 
-def _XOF(rho: bytes, i: int, j: int):
-    """XOF(rho, i, j) = SHAKE-128 stream"""
-    seed = rho + bytes([i, j])
-    # Return a generator-like object for reading bytes
-    return hashlib.shake_128(seed)
+def _XOF(rho: bytes, i: int, j: int, length: int) -> bytes:
+    """XOF(rho, i, j) = first `length` bytes of SHAKE-128 stream"""
+    return hashlib.shake_128(rho + bytes([i, j])).digest(length)
 
 # ─────────────────────────────────────────────
 # Polynomial arithmetic
@@ -225,22 +223,22 @@ def decode_vec(b: bytes, k: int, d: int) -> Vec:
 # ─────────────────────────────────────────────
 def sample_ntt(rho: bytes, i: int, j: int) -> Poly:
     """Sample a uniform polynomial in NTT domain (Algorithm 6)"""
-    xof = _XOF(rho, i, j)
-    # Need enough bytes; SHAKE-128 is infinite, get plenty
-    stream = xof.digest(840)
+    buf_len = 840
     a = []
     pos = 0
     while len(a) < N:
-        if pos + 3 > len(stream):
-            stream += xof.digest(168)
-        b0, b1, b2 = stream[pos], stream[pos+1], stream[pos+2]
-        pos += 3
-        d1 = b0 + 256 * (b1 % 16)
-        d2 = (b1 // 16) + 16 * b2
-        if d1 < Q:
-            a.append(d1)
-        if d2 < Q and len(a) < N:
-            a.append(d2)
+        stream = _XOF(rho, i, j, buf_len)
+        while pos + 3 <= len(stream) and len(a) < N:
+            b0, b1, b2 = stream[pos], stream[pos+1], stream[pos+2]
+            pos += 3
+            d1 = b0 + 256 * (b1 % 16)
+            d2 = (b1 // 16) + 16 * b2
+            if d1 < Q:
+                a.append(d1)
+            if d2 < Q and len(a) < N:
+                a.append(d2)
+        if len(a) < N:
+            buf_len += 168
     return a
 
 def sample_cbd(eta: int, b: bytes) -> Poly:
