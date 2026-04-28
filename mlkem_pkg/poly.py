@@ -9,16 +9,16 @@ Aritmética de polinomios en Z_q[X]/(X^256 + 1):
   - Operaciones sobre vectores y matrices de polinomios
 """
 
-from typing import List
-from .constants import Q, N, ZETAS, BASEMUL_ZETAS
+from .constants import BASEMUL_ZETAS, ZETAS, N, Q
 
 # ── Tipos alias ───────────────────────────────────────────────────────────
-Poly = List[int]   # N coeficientes en Z_q
-Vec  = List[Poly]  # vector de polinomios
-Mat  = List[Vec]   # matriz de polinomios
+Poly = list[int]  # N coeficientes en Z_q
+Vec = list[Poly]  # vector de polinomios
+Mat = list[Vec]  # matriz de polinomios
 
 
 # ── Aritmética elemental ──────────────────────────────────────────────────
+
 
 def poly_zero() -> Poly:
     """Polinomio cero."""
@@ -37,6 +37,7 @@ def poly_sub(a: Poly, b: Poly) -> Poly:
 
 # ── NTT e INTT ────────────────────────────────────────────────────────────
 
+
 def ntt(f: Poly) -> Poly:
     """
     Number Theoretic Transform.
@@ -53,7 +54,7 @@ def ntt(f: Poly) -> Poly:
             for j in range(start, start + length):
                 t = (zeta * a[j + length]) % Q
                 a[j + length] = (a[j] - t) % Q
-                a[j]          = (a[j] + t) % Q
+                a[j] = (a[j] + t) % Q
         length //= 2
     return a
 
@@ -73,10 +74,10 @@ def ntt_inv(f: Poly) -> Poly:
             k -= 1
             for j in range(start, start + length):
                 t = a[j]
-                a[j]          = (t + a[j + length]) % Q
+                a[j] = (t + a[j + length]) % Q
                 a[j + length] = (zeta * (a[j + length] - t)) % Q
         length *= 2
-    f_inv = pow(128, Q - 2, Q)   # 128^{-1} mod Q = 3303
+    f_inv = pow(128, Q - 2, Q)  # 128^{-1} mod Q = 3303
     return [(x * f_inv) % Q for x in a]
 
 
@@ -94,15 +95,16 @@ def poly_mul_ntt(a: Poly, b: Poly) -> Poly:
     """
     c = [0] * N
     for i in range(128):
-        a0, a1 = a[2*i], a[2*i+1]
-        b0, b1 = b[2*i], b[2*i+1]
-        zeta   = BASEMUL_ZETAS[i]
-        c[2*i]   = (a0*b0 + a1*b1*zeta) % Q
-        c[2*i+1] = (a0*b1 + a1*b0)      % Q
+        a0, a1 = a[2 * i], a[2 * i + 1]
+        b0, b1 = b[2 * i], b[2 * i + 1]
+        zeta = BASEMUL_ZETAS[i]
+        c[2 * i] = (a0 * b0 + a1 * b1 * zeta) % Q
+        c[2 * i + 1] = (a0 * b1 + a1 * b0) % Q
     return c
 
 
 # ── Operaciones vectoriales y matriciales ─────────────────────────────────
+
 
 def vec_add(u: Vec, v: Vec) -> Vec:
     """Suma elemento a elemento de dos vectores de polinomios."""

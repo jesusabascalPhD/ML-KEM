@@ -7,9 +7,10 @@ Tests unitarios para mlkem_pkg/sampling.py:
 """
 
 import pytest
-from mlkem_pkg.constants import Q, N
+
+from mlkem_pkg.constants import N, Q
 from mlkem_pkg.hash_utils import PRF
-from mlkem_pkg.sampling import sample_ntt, sample_cbd
+from mlkem_pkg.sampling import sample_cbd, sample_ntt
 
 
 class TestSampleNTT:
@@ -33,7 +34,7 @@ class TestSampleNTT:
         assert sample_ntt(rho, 0, 0) != sample_ntt(rho, 0, 1)
 
     def test_different_rho_different_poly(self):
-        assert sample_ntt(bytes(32), 0, 0) != sample_ntt(bytes([1]*32), 0, 0)
+        assert sample_ntt(bytes(32), 0, 0) != sample_ntt(bytes([1] * 32), 0, 0)
 
     def test_all_ij_pairs_differ(self):
         """Para k=4, las 16 entradas de la matriz deben ser distintas."""

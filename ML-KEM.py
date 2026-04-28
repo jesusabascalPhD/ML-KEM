@@ -8,17 +8,16 @@ Supports parameter sets:
   - ML-KEM-1024 (k=4, security level ~256-bit)
 """
 
-import os
 import hashlib
-import struct
-from typing import Tuple, List
+import os
 
 # ─────────────────────────────────────────────
 # Constants
 # ─────────────────────────────────────────────
-Q = 3329          # Modulus
-N = 256           # Polynomial degree
-ZETA = 17         # Primitive 256th root of unity mod Q
+Q = 3329  # Modulus
+N = 256  # Polynomial degree
+ZETA = 17  # Primitive 256th root of unity mod Q
+
 
 # Precomputed NTT zetas (powers of ZETA^(bitrev(i)) mod Q)
 def _compute_zetas():
@@ -28,6 +27,7 @@ def _compute_zetas():
         zetas.append(pow(ZETA, exp, Q))
     return zetas
 
+
 def _bit_reverse(x: int, bits: int) -> int:
     result = 0
     for _ in range(bits):
@@ -35,11 +35,14 @@ def _bit_reverse(x: int, bits: int) -> int:
         x >>= 1
     return result
 
+
 ZETAS = _compute_zetas()
+
 
 def _compute_basemul_zetas():
     """Zetas for base-case multiplication: ZETA^(2*bitrev7(i)+1) mod Q"""
     return [pow(ZETA, 2 * _bit_reverse(i, 7) + 1, Q) for i in range(128)]
+
 
 BASEMUL_ZETAS = _compute_basemul_zetas()
 
@@ -47,48 +50,58 @@ BASEMUL_ZETAS = _compute_basemul_zetas()
 # Parameter Sets
 # ─────────────────────────────────────────────
 PARAMS = {
-    512:  {"k": 2, "eta1": 3, "eta2": 2, "du": 10, "dv": 4},
-    768:  {"k": 3, "eta1": 2, "eta2": 2, "du": 10, "dv": 4},
+    512: {"k": 2, "eta1": 3, "eta2": 2, "du": 10, "dv": 4},
+    768: {"k": 3, "eta1": 2, "eta2": 2, "du": 10, "dv": 4},
     1024: {"k": 4, "eta1": 2, "eta2": 2, "du": 11, "dv": 5},
 }
+
 
 # ─────────────────────────────────────────────
 # Hash / XOF utilities
 # ─────────────────────────────────────────────
-def _G(data: bytes) -> Tuple[bytes, bytes]:
+def _G(data: bytes) -> tuple[bytes, bytes]:
     """G: B* → B32 × B32  (SHA3-512)"""
     h = hashlib.sha3_512(data).digest()
     return h[:32], h[32:]
+
 
 def _H(data: bytes) -> bytes:
     """H: B* → B32  (SHA3-256)"""
     return hashlib.sha3_256(data).digest()
 
+
 def _J(data: bytes) -> bytes:
     """J: B* → B32  (SHAKE-256 with 32-byte output)"""
     return hashlib.shake_256(data).digest(32)
+
 
 def _PRF(eta: int, s: bytes, b: int) -> bytes:
     """PRF_eta(s, b) = SHAKE-256(s || b)  → 64*eta bytes"""
     return hashlib.shake_256(s + bytes([b])).digest(64 * eta)
 
+
 def _XOF(rho: bytes, i: int, j: int, length: int) -> bytes:
     """XOF(rho, i, j) = first `length` bytes of SHAKE-128 stream"""
     return hashlib.shake_128(rho + bytes([i, j])).digest(length)
 
+
 # ─────────────────────────────────────────────
 # Polynomial arithmetic
 # ─────────────────────────────────────────────
-Poly = List[int]   # list of N = 256 coefficients mod Q
+Poly = list[int]  # list of N = 256 coefficients mod Q
+
 
 def poly_add(a: Poly, b: Poly) -> Poly:
     return [(a[i] + b[i]) % Q for i in range(N)]
 
+
 def poly_sub(a: Poly, b: Poly) -> Poly:
     return [(a[i] - b[i]) % Q for i in range(N)]
 
+
 def poly_zero() -> Poly:
     return [0] * N
+
 
 def ntt(f: Poly) -> Poly:
     """Number Theoretic Transform (in-place, returns new poly)"""
@@ -105,6 +118,7 @@ def ntt(f: Poly) -> Poly:
                 a[j] = (a[j] + t) % Q
         length //= 2
     return a
+
 
 def ntt_inv(f: Poly) -> Poly:
     """Inverse NTT"""
@@ -123,27 +137,31 @@ def ntt_inv(f: Poly) -> Poly:
     f_inv = pow(128, Q - 2, Q)  # 128^{-1} mod Q
     return [(x * f_inv) % Q for x in a]
 
+
 def poly_mul_ntt(a: Poly, b: Poly) -> Poly:
     """Pointwise multiplication in NTT domain (base case: degree-2 polynomials).
     Uses BASEMUL_ZETAS = ZETA^(2*bitrev7(i)+1) mod Q per FIPS 203."""
     c = [0] * N
     for i in range(128):
-        a0, a1 = a[2*i], a[2*i+1]
-        b0, b1 = b[2*i], b[2*i+1]
+        a0, a1 = a[2 * i], a[2 * i + 1]
+        b0, b1 = b[2 * i], b[2 * i + 1]
         zeta = BASEMUL_ZETAS[i]
         # (a0 + a1*X)(b0 + b1*X) mod (X^2 - zeta)
-        c[2*i]   = (a0*b0 + a1*b1*zeta) % Q
-        c[2*i+1] = (a0*b1 + a1*b0) % Q
+        c[2 * i] = (a0 * b0 + a1 * b1 * zeta) % Q
+        c[2 * i + 1] = (a0 * b1 + a1 * b0) % Q
     return c
+
 
 # ─────────────────────────────────────────────
 # Vector / Matrix operations
 # ─────────────────────────────────────────────
-Vec = List[Poly]
-Mat = List[Vec]
+Vec = list[Poly]
+Mat = list[Vec]
+
 
 def vec_add(u: Vec, v: Vec) -> Vec:
     return [poly_add(u[i], v[i]) for i in range(len(u))]
+
 
 def mat_vec_mul(A: Mat, v: Vec) -> Vec:
     """A @ v in NTT domain"""
@@ -156,12 +174,14 @@ def mat_vec_mul(A: Mat, v: Vec) -> Vec:
         result.append(acc)
     return result
 
+
 def vec_dot(u: Vec, v: Vec) -> Poly:
     """u · v in NTT domain"""
     acc = poly_zero()
     for i in range(len(u)):
         acc = poly_add(acc, poly_mul_ntt(u[i], v[i]))
     return acc
+
 
 # ─────────────────────────────────────────────
 # Encoding / Decoding
@@ -170,9 +190,11 @@ def _compress(x: int, d: int) -> int:
     """Compress Zq → Z_{2^d}"""
     return round(x * (2**d) / Q) % (2**d)
 
+
 def _decompress(y: int, d: int) -> int:
     """Decompress Z_{2^d} → Zq"""
     return round(y * Q / (2**d)) % Q
+
 
 def byte_encode(f: Poly, d: int) -> bytes:
     """ByteEncode_d: encode polynomial with d bits per coeff"""
@@ -191,6 +213,7 @@ def byte_encode(f: Poly, d: int) -> bytes:
         result.append(byte)
     return bytes(result)
 
+
 def byte_decode(b: bytes, d: int) -> Poly:
     """ByteDecode_d: decode bytes to polynomial"""
     bits = []
@@ -205,18 +228,23 @@ def byte_decode(b: bytes, d: int) -> Poly:
         f.append(val % Q)
     return f
 
+
 def compress_poly(f: Poly, d: int) -> Poly:
     return [_compress(c, d) for c in f]
+
 
 def decompress_poly(f: Poly, d: int) -> Poly:
     return [_decompress(c, d) for c in f]
 
+
 def encode_vec(v: Vec, d: int) -> bytes:
     return b"".join(byte_encode(compress_poly(p, d), d) for p in v)
 
+
 def decode_vec(b: bytes, k: int, d: int) -> Vec:
     size = (N * d) // 8
-    return [decompress_poly(byte_decode(b[i*size:(i+1)*size], d), d) for i in range(k)]
+    return [decompress_poly(byte_decode(b[i * size : (i + 1) * size], d), d) for i in range(k)]
+
 
 # ─────────────────────────────────────────────
 # Sampling
@@ -229,7 +257,7 @@ def sample_ntt(rho: bytes, i: int, j: int) -> Poly:
     while len(a) < N:
         stream = _XOF(rho, i, j, buf_len)
         while pos + 3 <= len(stream) and len(a) < N:
-            b0, b1, b2 = stream[pos], stream[pos+1], stream[pos+2]
+            b0, b1, b2 = stream[pos], stream[pos + 1], stream[pos + 2]
             pos += 3
             d1 = b0 + 256 * (b1 % 16)
             d2 = (b1 // 16) + 16 * b2
@@ -240,6 +268,7 @@ def sample_ntt(rho: bytes, i: int, j: int) -> Poly:
         if len(a) < N:
             buf_len += 168
     return a
+
 
 def sample_cbd(eta: int, b: bytes) -> Poly:
     """Sample from centered binomial distribution CBD_eta (Algorithm 7)"""
@@ -255,6 +284,7 @@ def sample_cbd(eta: int, b: bytes) -> Poly:
         f.append((a_sum - b_sum) % Q)
     return f
 
+
 # ─────────────────────────────────────────────
 # Key Generation, Encapsulation, Decapsulation
 # ─────────────────────────────────────────────
@@ -263,11 +293,11 @@ class MLKEM:
         if security_level not in PARAMS:
             raise ValueError(f"Invalid security level. Choose from {list(PARAMS.keys())}")
         p = PARAMS[security_level]
-        self.k    = p["k"]
+        self.k = p["k"]
         self.eta1 = p["eta1"]
         self.eta2 = p["eta2"]
-        self.du   = p["du"]
-        self.dv   = p["dv"]
+        self.du = p["du"]
+        self.dv = p["dv"]
         self.security_level = security_level
 
     def _generate_matrix(self, rho: bytes, transpose: bool = False) -> Mat:
@@ -276,13 +306,12 @@ class MLKEM:
         for i in range(k):
             row = []
             for j in range(k):
-                row.append(sample_ntt(rho, j if transpose else i,
-                                           i if transpose else j))
+                row.append(sample_ntt(rho, j if transpose else i, i if transpose else j))
             A.append(row)
         return A
 
     # ── K-PKE Key Generation ──────────────────
-    def _pke_keygen(self, d: bytes) -> Tuple[bytes, bytes]:
+    def _pke_keygen(self, d: bytes) -> tuple[bytes, bytes]:
         """Internal PKE key generation. d = 32 random bytes."""
         rho, sigma = _G(d + bytes([self.k]))
 
@@ -309,12 +338,12 @@ class MLKEM:
     def _pke_encrypt(self, ek: bytes, m: bytes, r: bytes) -> bytes:
         """Encrypt 32-byte message m with randomness r."""
         k = self.k
-        t_hat = [byte_decode(ek[i*384:(i+1)*384], 12) for i in range(k)]
-        rho = ek[k*384:]
+        t_hat = [byte_decode(ek[i * 384 : (i + 1) * 384], 12) for i in range(k)]
+        rho = ek[k * 384 :]
 
         A_hat_T = self._generate_matrix(rho, transpose=True)
 
-        y  = []
+        y = []
         e1 = []
         for i in range(k):
             y.append(sample_cbd(self.eta1, _PRF(self.eta1, r, i)))
@@ -347,14 +376,14 @@ class MLKEM:
 
         u = decode_vec(c1, k, self.du)
         v = decompress_poly(byte_decode(c2, self.dv), self.dv)
-        s_hat = [byte_decode(dk[i*384:(i+1)*384], 12) for i in range(k)]
+        s_hat = [byte_decode(dk[i * 384 : (i + 1) * 384], 12) for i in range(k)]
 
         u_hat = [ntt(ui) for ui in u]
         w = poly_sub(v, ntt_inv(vec_dot(s_hat, u_hat)))
         return byte_encode(compress_poly(w, 1), 1)
 
     # ── ML-KEM Key Generation ─────────────────
-    def keygen(self) -> Tuple[bytes, bytes]:
+    def keygen(self) -> tuple[bytes, bytes]:
         """
         Generate an ML-KEM key pair.
         Returns: (ek, dk)  –  encapsulation key, decapsulation key
@@ -366,7 +395,7 @@ class MLKEM:
         return ek, dk
 
     # ── ML-KEM Encapsulate ────────────────────
-    def encaps(self, ek: bytes) -> Tuple[bytes, bytes]:
+    def encaps(self, ek: bytes) -> tuple[bytes, bytes]:
         """
         Encapsulate: given ek, produce (K, c).
         K = 32-byte shared secret, c = ciphertext.
@@ -383,10 +412,10 @@ class MLKEM:
         Implements implicit rejection for security.
         """
         k = self.k
-        dk_pke = dk[:k*384]
-        ek      = dk[k*384 : k*384 + k*384 + 32]
-        h       = dk[k*384 + k*384 + 32 : k*384 + k*384 + 64]
-        z       = dk[k*384 + k*384 + 64:]
+        dk_pke = dk[: k * 384]
+        ek = dk[k * 384 : k * 384 + k * 384 + 32]
+        h = dk[k * 384 + k * 384 + 32 : k * 384 + k * 384 + 64]
+        z = dk[k * 384 + k * 384 + 64 :]
 
         m_prime = self._pke_decrypt(dk_pke, c)
         K_prime, r_prime = _G(m_prime + h)
@@ -399,6 +428,7 @@ class MLKEM:
         K = bytes(K_prime[i] if ok else K_reject[i] for i in range(32))
         return K
 
+
 # ─────────────────────────────────────────────
 # Constant-time helpers
 # ─────────────────────────────────────────────
@@ -410,6 +440,7 @@ def _ct_eq(a: bytes, b: bytes) -> bool:
     for x, y in zip(a, b):
         diff |= x ^ y
     return diff == 0
+
 
 # ─────────────────────────────────────────────
 # Demo
@@ -448,6 +479,7 @@ def demo():
     print("\n" + "=" * 60)
     print("  All tests passed! ✓")
     print("=" * 60)
+
 
 if __name__ == "__main__":
     demo()

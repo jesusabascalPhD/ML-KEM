@@ -11,10 +11,9 @@ Funciones hash y XOF requeridas por ML-KEM (FIPS 203 §4.1):
 """
 
 import hashlib
-from typing import Tuple
 
 
-def G(data: bytes) -> Tuple[bytes, bytes]:
+def G(data: bytes) -> tuple[bytes, bytes]:
     """G: B* → B32 × B32  (SHA3-512, salida dividida en dos mitades)."""
     h = hashlib.sha3_512(data).digest()
     return h[:32], h[32:]

@@ -13,12 +13,12 @@ Ejecutar desde el directorio raíz del proyecto:
 """
 
 from mlkem_pkg import MLKEM
-from mlkem_pkg.aes_gcm import aes_gcm_encrypt, aes_gcm_decrypt
-
+from mlkem_pkg.aes_gcm import aes_gcm_decrypt, aes_gcm_encrypt
 
 # ── Demo principal ────────────────────────────────────────────────────────
 
 MENSAJE = "Hola Bob, esto es un secreto cifrado con ML-KEM + AES-GCM 🔐"
+
 
 def demo() -> None:
     print("=" * 62)
@@ -28,9 +28,9 @@ def demo() -> None:
     print(f"\n  Mensaje original : «{MENSAJE}»")
 
     for level in [512, 768, 1024]:
-        print(f"\n{'─'*62}")
+        print(f"\n{'─' * 62}")
         print(f"  ML-KEM-{level}")
-        print(f"{'─'*62}")
+        print(f"{'─' * 62}")
         kem = MLKEM(level)
 
         # ── Alice genera sus claves ───────────────────────────────
@@ -48,14 +48,14 @@ def demo() -> None:
 
         # ── Alice desencapsula la cápsula y obtiene K_alice ───────
         K_alice = kem.decaps(dk, capsula)
-        print(f"  [4] Alice desencapsula")
+        print("  [4] Alice desencapsula")
         print(f"       Clave Alice: {K_alice.hex()[:32]}…")
         print(f"       Claves iguales: {'✓' if K_alice == K_bob else '✗ ERROR'}")
 
         # ── Alice descifra el mensaje ─────────────────────────────
         texto = aes_gcm_decrypt(K_alice, nonce, ct_mensaje)
         if texto is not None:
-            print(f"  [5] Alice descifra  ✓")
+            print("  [5] Alice descifra  ✓")
             print(f"       Mensaje        : «{texto.decode()}»")
         else:
             print("  [5] Alice descifra  ✗ ERROR — autenticación fallida")
@@ -67,9 +67,9 @@ def demo() -> None:
         rechazado = texto_malo is None
         print(f"  [6] Cápsula manipulada → descifrado falla: {'✓' if rechazado else '✗ ERROR'}")
 
-    print(f"\n{'='*62}")
+    print(f"\n{'=' * 62}")
     print("  Todos los tests pasaron. ✓")
-    print(f"{'='*62}\n")
+    print(f"{'=' * 62}\n")
 
 
 if __name__ == "__main__":

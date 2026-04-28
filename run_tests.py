@@ -9,8 +9,8 @@ Uso:
     python run_tests.py -k kem     # solo tests que contengan "kem"
 """
 
-import sys
 import os
+import sys
 
 # ── Asegurar que mlkem_pkg es importable ──────────────────────────────────
 ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -19,7 +19,7 @@ if ROOT not in sys.path:
 
 # ── Verificar que mlkem_pkg existe ────────────────────────────────────────
 try:
-    import mlkem_pkg
+    import mlkem_pkg  # noqa: F401
 except ModuleNotFoundError:
     print("ERROR: No se encuentra 'mlkem_pkg'.")
     print(f"       Asegúrate de que existe la carpeta mlkem_pkg/ en: {ROOT}")

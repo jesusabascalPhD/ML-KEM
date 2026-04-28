@@ -8,29 +8,36 @@ Tests unitarios para mlkem_pkg/codec.py:
 """
 
 import pytest
-from mlkem_pkg.constants import Q, N
-from mlkem_pkg.codec import (
-    compress, decompress,
-    compress_poly, decompress_poly,
-    byte_encode, byte_decode,
-    encode_vec, decode_vec,
-)
 
+from mlkem_pkg.codec import (
+    byte_decode,
+    byte_encode,
+    compress,
+    compress_poly,
+    decode_vec,
+    decompress,
+    decompress_poly,
+    encode_vec,
+)
+from mlkem_pkg.constants import N, Q
 
 # ── Utilidades ────────────────────────────────────────────────────────────
 
+
 def _rand_poly(seed: int) -> list[int]:
     import hashlib
+
     b = hashlib.shake_256(seed.to_bytes(4, "big")).digest(N * 2)
-    return [int.from_bytes(b[i*2:(i+1)*2], "big") % Q for i in range(N)]
+    return [int.from_bytes(b[i * 2 : (i + 1) * 2], "big") % Q for i in range(N)]
 
 
 # ── compress / decompress ─────────────────────────────────────────────────
 
+
 class TestCompressDecompress:
     @pytest.mark.parametrize("d", [1, 4, 5, 10, 11, 12])
     def test_output_in_range(self, d):
-        for x in [0, Q//4, Q//2, 3*Q//4, Q-1]:
+        for x in [0, Q // 4, Q // 2, 3 * Q // 4, Q - 1]:
             c = compress(x, d)
             assert 0 <= c < 2**d
 
@@ -60,6 +67,7 @@ class TestCompressDecompress:
 
 
 # ── byte_encode / byte_decode ─────────────────────────────────────────────
+
 
 class TestByteEncodeDecode:
     @pytest.mark.parametrize("d", [1, 4, 5, 10, 11, 12])
@@ -91,6 +99,7 @@ class TestByteEncodeDecode:
 
     def test_decode_coefficients_in_range(self):
         import os
+
         b = os.urandom((N * 12) // 8)
         f = byte_decode(b, 12)
         assert all(0 <= c < Q for c in f)
@@ -98,6 +107,7 @@ class TestByteEncodeDecode:
 
 
 # ── encode_vec / decode_vec ───────────────────────────────────────────────
+
 
 class TestEncodeDecodeVec:
     @pytest.mark.parametrize("k,d", [(2, 10), (3, 10), (4, 11), (3, 4)])
@@ -120,7 +130,6 @@ class TestEncodeDecodeVec:
         Verificamos que el error de redondeo es pequeño (< Q/2^du).
         """
         k, d = 3, 10
-        from mlkem_pkg.codec import compress_poly, decompress_poly
         v = [_rand_poly(i) for i in range(k)]
         encoded = encode_vec(v, d)
         decoded = decode_vec(encoded, k, d)

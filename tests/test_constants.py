@@ -8,7 +8,8 @@ Tests unitarios para mlkem_pkg/constants.py:
 """
 
 import pytest
-from mlkem_pkg.constants import Q, N, ZETA, ZETAS, BASEMUL_ZETAS, PARAMS, _bit_reverse
+
+from mlkem_pkg.constants import BASEMUL_ZETAS, PARAMS, ZETA, ZETAS, N, Q, _bit_reverse
 
 
 class TestBasicConstants:
@@ -99,11 +100,14 @@ class TestParams:
     def test_valid_levels(self):
         assert set(PARAMS.keys()) == {512, 768, 1024}
 
-    @pytest.mark.parametrize("level,expected", [
-        (512,  {"k": 2, "eta1": 3, "eta2": 2, "du": 10, "dv": 4}),
-        (768,  {"k": 3, "eta1": 2, "eta2": 2, "du": 10, "dv": 4}),
-        (1024, {"k": 4, "eta1": 2, "eta2": 2, "du": 11, "dv": 5}),
-    ])
+    @pytest.mark.parametrize(
+        "level,expected",
+        [
+            (512, {"k": 2, "eta1": 3, "eta2": 2, "du": 10, "dv": 4}),
+            (768, {"k": 3, "eta1": 2, "eta2": 2, "du": 10, "dv": 4}),
+            (1024, {"k": 4, "eta1": 2, "eta2": 2, "du": 11, "dv": 5}),
+        ],
+    )
     def test_param_values(self, level, expected):
         assert PARAMS[level] == expected
 

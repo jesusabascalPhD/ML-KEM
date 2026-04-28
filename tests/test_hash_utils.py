@@ -8,7 +8,8 @@ Tests unitarios para mlkem_pkg/hash_utils.py:
 """
 
 import pytest
-from mlkem_pkg.hash_utils import G, H, J, PRF, XOF
+
+from mlkem_pkg.hash_utils import PRF, XOF, G, H, J
 
 
 class TestG:
@@ -84,7 +85,7 @@ class TestPRF:
         assert PRF(2, s, 0) != PRF(2, s, 1)
 
     def test_different_seed_different_output(self):
-        assert PRF(2, bytes(32), 0) != PRF(2, bytes([1]*32), 0)
+        assert PRF(2, bytes(32), 0) != PRF(2, bytes([1] * 32), 0)
 
     def test_counter_range(self):
         """Debe funcionar con contadores de 0 a 255."""
@@ -106,7 +107,7 @@ class TestXOF:
         assert XOF(rho, 0, 0).digest(64) != XOF(rho, 1, 0).digest(64)
 
     def test_different_rho_different_stream(self):
-        assert XOF(bytes(32), 0, 0).digest(64) != XOF(bytes([1]*32), 0, 0).digest(64)
+        assert XOF(bytes(32), 0, 0).digest(64) != XOF(bytes([1] * 32), 0, 0).digest(64)
 
     def test_output_length(self):
         for n in [16, 64, 256, 840]:

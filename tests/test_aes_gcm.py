@@ -6,13 +6,12 @@ Tests unitarios para mlkem_pkg/aes_gcm.py:
   - aes_gcm_encrypt / aes_gcm_decrypt: cifrado autenticado
 """
 
-import os
 import pytest
-from mlkem_pkg.aes_gcm import aes_encrypt_block, aes_gcm_encrypt, aes_gcm_decrypt
 
+from mlkem_pkg.aes_gcm import aes_encrypt_block, aes_gcm_decrypt, aes_gcm_encrypt
 
 KEY_32 = bytes(range(32))
-KEY_B  = bytes([0xAB] * 32)
+KEY_B = bytes([0xAB] * 32)
 
 
 class TestAESBlock:
@@ -40,7 +39,7 @@ class TestAESBlock:
         ct   = 8ea2b7ca516745bfeafc49904b496089  (conocido)
         """
         key = bytes(range(32))
-        pt  = bytes(range(16))
+        pt = bytes(range(16))
         # Valor de referencia del NIST AESAVS
         expected = bytes.fromhex("8ea2b7ca516745bfeafc49904b496089")
         assert aes_encrypt_block(key, pt) == expected
@@ -63,14 +62,17 @@ class TestAESGCM:
         nonce, ct = aes_gcm_encrypt(KEY_32, msg)
         assert aes_gcm_decrypt(KEY_32, nonce, ct) == msg
 
-    @pytest.mark.parametrize("msg", [
-        b"",
-        b"a",
-        b"A" * 16,
-        b"B" * 17,
-        b"C" * 100,
-        "Hola mundo, esto es un secreto 🔐".encode(),
-    ])
+    @pytest.mark.parametrize(
+        "msg",
+        [
+            b"",
+            b"a",
+            b"A" * 16,
+            b"B" * 17,
+            b"C" * 100,
+            "Hola mundo, esto es un secreto 🔐".encode(),
+        ],
+    )
     def test_roundtrip_varios_mensajes(self, msg):
         nonce, ct = aes_gcm_encrypt(KEY_32, msg)
         assert aes_gcm_decrypt(KEY_32, nonce, ct) == msg

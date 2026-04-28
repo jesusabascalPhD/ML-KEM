@@ -8,9 +8,9 @@ Constantes globales de ML-KEM (FIPS 203):
 """
 
 # ── Parámetros del anillo ──────────────────────────────────────────────────
-Q    = 3329   # Módulo primo
-N    = 256    # Grado del polinomio
-ZETA = 17     # Raíz primitiva 256-ésima de la unidad mod Q
+Q = 3329  # Módulo primo
+N = 256  # Grado del polinomio
+ZETA = 17  # Raíz primitiva 256-ésima de la unidad mod Q
 
 
 # ── Utilidad: inversión de bits ────────────────────────────────────────────
@@ -40,7 +40,7 @@ def _compute_basemul_zetas() -> list[int]:
     return [pow(ZETA, 2 * _bit_reverse(i, 7) + 1, Q) for i in range(128)]
 
 
-ZETAS         = _compute_ntt_zetas()
+ZETAS = _compute_ntt_zetas()
 BASEMUL_ZETAS = _compute_basemul_zetas()
 
 
@@ -51,7 +51,7 @@ BASEMUL_ZETAS = _compute_basemul_zetas()
 #   du   : bits de compresión para u
 #   dv   : bits de compresión para v
 PARAMS: dict[int, dict] = {
-    512:  {"k": 2, "eta1": 3, "eta2": 2, "du": 10, "dv": 4},
-    768:  {"k": 3, "eta1": 2, "eta2": 2, "du": 10, "dv": 4},
+    512: {"k": 2, "eta1": 3, "eta2": 2, "du": 10, "dv": 4},
+    768: {"k": 3, "eta1": 2, "eta2": 2, "du": 10, "dv": 4},
     1024: {"k": 4, "eta1": 2, "eta2": 2, "du": 11, "dv": 5},
 }

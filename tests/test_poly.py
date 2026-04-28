@@ -8,25 +8,32 @@ Tests unitarios para mlkem_pkg/poly.py:
   - vec_add, mat_vec_mul, vec_dot
 """
 
-import pytest
-from mlkem_pkg.constants import Q, N
+from mlkem_pkg.constants import N, Q
 from mlkem_pkg.poly import (
-    poly_zero, poly_add, poly_sub,
-    ntt, ntt_inv, poly_mul_ntt,
-    vec_add, mat_vec_mul, vec_dot,
+    mat_vec_mul,
+    ntt,
+    ntt_inv,
+    poly_add,
+    poly_mul_ntt,
+    poly_sub,
+    poly_zero,
+    vec_add,
+    vec_dot,
 )
 
-
 # ── Utilidades de test ────────────────────────────────────────────────────
+
 
 def _rand_poly(seed: int) -> list[int]:
     """Polinomio pseudoaleatorio reproducible."""
     import hashlib
+
     b = hashlib.shake_256(seed.to_bytes(4, "big")).digest(N * 2)
-    return [int.from_bytes(b[i*2:(i+1)*2], "big") % Q for i in range(N)]
+    return [int.from_bytes(b[i * 2 : (i + 1) * 2], "big") % Q for i in range(N)]
 
 
 # ── poly_zero ─────────────────────────────────────────────────────────────
+
 
 class TestPolyZero:
     def test_length(self):
@@ -37,6 +44,7 @@ class TestPolyZero:
 
 
 # ── poly_add / poly_sub ───────────────────────────────────────────────────
+
 
 class TestPolyAddSub:
     def test_add_commutative(self):
@@ -72,6 +80,7 @@ class TestPolyAddSub:
 
 
 # ── NTT e INTT ────────────────────────────────────────────────────────────
+
 
 class TestNTT:
     def test_roundtrip(self):
@@ -112,6 +121,7 @@ class TestNTT:
 
 
 # ── poly_mul_ntt ──────────────────────────────────────────────────────────
+
 
 class TestPolyMulNTT:
     def test_multiply_by_one(self):
@@ -158,6 +168,7 @@ class TestPolyMulNTT:
 
 # ── Operaciones vectoriales ───────────────────────────────────────────────
 
+
 class TestVecOps:
     def _make_vec(self, k: int, seed_offset: int) -> list:
         return [_rand_poly(seed_offset + i) for i in range(k)]
@@ -178,7 +189,7 @@ class TestVecOps:
         one_hat = ntt([1] + [0] * (N - 1))
         zero_hat = poly_zero()
         # Identidad en NTT
-        I = [[one_hat if i == j else zero_hat for j in range(k)] for i in range(k)]
+        I = [[one_hat if i == j else zero_hat for j in range(k)] for i in range(k)]  # noqa: E741
         v = [ntt(_rand_poly(i)) for i in range(k)]
         result = mat_vec_mul(I, v)
         assert result == v
@@ -194,8 +205,8 @@ class TestVecOps:
 
     def test_vec_dot_commutative(self):
         k = 3
-        u = [ntt(_rand_poly(i))   for i in range(k)]
-        v = [ntt(_rand_poly(k+i)) for i in range(k)]
+        u = [ntt(_rand_poly(i)) for i in range(k)]
+        v = [ntt(_rand_poly(k + i)) for i in range(k)]
         assert vec_dot(u, v) == vec_dot(v, u)
 
     def test_vec_dot_zero(self):

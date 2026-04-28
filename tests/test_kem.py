@@ -9,19 +9,20 @@ Tests unitarios para mlkem_pkg/kem.py (clase MLKEM):
 """
 
 import pytest
-from mlkem_pkg.kem import MLKEM, _ct_eq
 
+from mlkem_pkg.kem import MLKEM, _ct_eq
 
 # ── Parámetros esperados por nivel ────────────────────────────────────────
 # (ek_size, dk_size, ct_size)  según FIPS 203 Tabla 2
 EXPECTED = {
-    512:  (800,  1632,  768),
-    768:  (1184, 2400,  1088),
-    1024: (1568, 3168,  1568),
+    512: (800, 1632, 768),
+    768: (1184, 2400, 1088),
+    1024: (1568, 3168, 1568),
 }
 
 
 # ── Constructor ───────────────────────────────────────────────────────────
+
 
 class TestMLKEMInit:
     def test_valid_levels(self):
@@ -48,6 +49,7 @@ class TestMLKEMInit:
 
 # ── keygen ────────────────────────────────────────────────────────────────
 
+
 class TestKeyGen:
     @pytest.mark.parametrize("level", [512, 768, 1024])
     def test_key_sizes(self, level):
@@ -71,6 +73,7 @@ class TestKeyGen:
 
 # ── encaps ────────────────────────────────────────────────────────────────
 
+
 class TestEncaps:
     @pytest.mark.parametrize("level", [512, 768, 1024])
     def test_output_sizes(self, level):
@@ -78,8 +81,8 @@ class TestEncaps:
         kem = MLKEM(level)
         ek, _ = kem.keygen()
         K, c = kem.encaps(ek)
-        assert len(K) == 32,      f"Shared secret size: {len(K)}"
-        assert len(c) == ct_exp,  f"Ciphertext size: {len(c)} != {ct_exp}"
+        assert len(K) == 32, f"Shared secret size: {len(K)}"
+        assert len(c) == ct_exp, f"Ciphertext size: {len(c)} != {ct_exp}"
 
     @pytest.mark.parametrize("level", [512, 768, 1024])
     def test_encaps_is_random(self, level):
@@ -100,6 +103,7 @@ class TestEncaps:
 
 # ── decaps: corrección ────────────────────────────────────────────────────
 
+
 class TestDecapsCorrectness:
     @pytest.mark.parametrize("level", [512, 768, 1024])
     def test_shared_secret_matches(self, level):
@@ -107,7 +111,7 @@ class TestDecapsCorrectness:
         kem = MLKEM(level)
         ek, dk = kem.keygen()
         K_sender, c = kem.encaps(ek)
-        K_receiver  = kem.decaps(dk, c)
+        K_receiver = kem.decaps(dk, c)
         assert K_sender == K_receiver
 
     @pytest.mark.parametrize("level", [512, 768, 1024])
@@ -117,7 +121,7 @@ class TestDecapsCorrectness:
         ek, dk = kem.keygen()
         for _ in range(3):
             K_s, c = kem.encaps(ek)
-            K_r    = kem.decaps(dk, c)
+            K_r = kem.decaps(dk, c)
             assert K_s == K_r
 
     def test_output_is_32_bytes(self):
@@ -130,6 +134,7 @@ class TestDecapsCorrectness:
 
 
 # ── decaps: rechazo implícito ─────────────────────────────────────────────
+
 
 class TestImplicitRejection:
     @pytest.mark.parametrize("level", [512, 768, 1024])
@@ -165,14 +170,16 @@ class TestImplicitRejection:
 
 # ── K-PKE interno ─────────────────────────────────────────────────────────
 
+
 class TestKPKE:
     @pytest.mark.parametrize("level", [512, 768, 1024])
     def test_pke_encrypt_decrypt_roundtrip(self, level):
         """El PKE subyacente debe ser correcto."""
         import os
+
         kem = MLKEM(level)
         ek, dk_pke_full = kem.keygen()
-        dk_pke = dk_pke_full[:kem.k * 384]
+        dk_pke = dk_pke_full[: kem.k * 384]
 
         m = os.urandom(32)
         r = os.urandom(32)
@@ -181,14 +188,12 @@ class TestKPKE:
         assert m == m2
 
     def test_pke_ciphertext_size_512(self):
-        import os
         kem = MLKEM(512)
         ek, _ = kem.keygen()
         c = kem._pke_encrypt(ek, bytes(32), bytes(32))
         assert len(c) == 768
 
     def test_pke_ciphertext_size_768(self):
-        import os
         kem = MLKEM(768)
         ek, _ = kem.keygen()
         c = kem._pke_encrypt(ek, bytes(32), bytes(32))
@@ -196,6 +201,7 @@ class TestKPKE:
 
 
 # ── _ct_eq ────────────────────────────────────────────────────────────────
+
 
 class TestCtEq:
     def test_equal_bytes(self):

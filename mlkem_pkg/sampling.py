@@ -10,7 +10,7 @@ Funciones de muestreo de ML-KEM (FIPS 203 §4.2.2):
                            CBD_eta a partir de bytes pseudoaleatorios. [Alg. 7]
 """
 
-from .constants import Q, N
+from .constants import N, Q
 from .hash_utils import XOF
 from .poly import Poly
 
@@ -29,7 +29,7 @@ def sample_ntt(rho: bytes, i: int, j: int) -> Poly:
     Solo se aceptan valores < Q.
     """
     xof = XOF(rho, i, j)
-    stream = xof.digest(840)   # suficiente para casi todos los casos
+    stream = xof.digest(840)  # suficiente para casi todos los casos
     a: Poly = []
     pos = 0
 
@@ -38,7 +38,7 @@ def sample_ntt(rho: bytes, i: int, j: int) -> Poly:
         if pos + 3 > len(stream):
             stream += xof.digest(168)
 
-        b0, b1, b2 = stream[pos], stream[pos+1], stream[pos+2]
+        b0, b1, b2 = stream[pos], stream[pos + 1], stream[pos + 2]
         pos += 3
 
         d1 = b0 + 256 * (b1 & 0x0F)
@@ -62,9 +62,7 @@ def sample_cbd(eta: int, b: bytes) -> Poly:
     Entrada: 64·eta bytes pseudoaleatorios.
     Salida:  polinomio en Z_q (coeficientes centrados reducidos mod Q).
     """
-    assert len(b) == 64 * eta, (
-        f"sample_cbd espera {64 * eta} bytes, recibió {len(b)}"
-    )
+    assert len(b) == 64 * eta, f"sample_cbd espera {64 * eta} bytes, recibió {len(b)}"
 
     # Desempaquetar todos los bits en orden little-endian
     bits = []
@@ -74,7 +72,7 @@ def sample_cbd(eta: int, b: bytes) -> Poly:
 
     f: Poly = []
     for i in range(N):
-        a_sum = sum(bits[2 * i * eta + j]       for j in range(eta))
+        a_sum = sum(bits[2 * i * eta + j] for j in range(eta))
         b_sum = sum(bits[2 * i * eta + eta + j] for j in range(eta))
         f.append((a_sum - b_sum) % Q)
 
